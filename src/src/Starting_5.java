@@ -6,8 +6,8 @@ public class Starting_5 {
     private static final String STATS_FILE = "player_stats.csv";
     private static final String TERMS_FILE = "stat_terms.txt";
 
-    private static Scanner sc = new Scanner(System.in);
     private static String loggedInUser = null;
+    private static final Scanner sc = new Scanner(System.in);
 
     public static void main(String[] args) throws IOException {
         while (true) {
@@ -15,7 +15,7 @@ public class Starting_5 {
             System.out.println("1. 회원가입");
             System.out.println("2. 로그인");
             System.out.println("3. 농구 소개");
-            System.out.println("4. 검색");
+            System.out.println("4. 검색 (선수/스탯 용어)");
             if (loggedInUser != null) {
                 System.out.println("5. 로그아웃");
                 System.out.println("6. 게시판");
@@ -25,47 +25,80 @@ public class Starting_5 {
             String choice = sc.nextLine();
 
             switch (choice) {
-                case "1": signUp(); break;
-                case "2": login(); break;
-                case "3": showBasketballIntro(); break;
-                case "4": search(); break;
+                case "1":
+                    signUp();
+                    break;
+                case "2":
+                    login();
+                    break;
+                case "3":
+                    showBasketballIntro();
+                    break;
+                case "4":
+                    search();
+                    break;
                 case "5":
                     if (loggedInUser != null) logout();
                     break;
                 case "6":
                     if (loggedInUser != null) bbsMenu();
                     break;
-                case "0": System.exit(0);
-                default: System.out.println("잘못된 선택입니다.");
+                case "0":
+                    System.exit(0);
+                default:
+                    System.out.println("잘못된 선택입니다.");
             }
         }
     }
 
     private static void signUp() throws IOException {
         System.out.println("[회원가입]");
-        System.out.print("새 아이디 입력: ");
-        String id = sc.nextLine();
 
-        BufferedReader reader = new BufferedReader(new FileReader(USER_FILE));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            if (line.split(" ")[0].equals(id)) {
-                System.out.println("이미 존재하는 아이디입니다.");
-                reader.close();
-                return;
+        String id;
+        while (true) {
+            System.out.print("아이디 입력: ");
+            id = sc.nextLine().trim();
+            if (isIdDuplicate(id)) {
+                System.out.println("이미 존재하는 아이디입니다. 다른 아이디를 입력하세요.");
+            } else {
+                break;
             }
         }
-        reader.close();
 
         System.out.print("비밀번호 입력: ");
         String pw = sc.nextLine();
 
+        String email;
+        while (true) {
+            System.out.print("이메일 입력: ");
+            email = sc.nextLine().trim();
+            if (!email.contains("@")) {
+                System.out.println("유효하지 않은 이메일입니다. '@'가 포함되어야 합니다.");
+            } else {
+                break;
+            }
+        }
+
         BufferedWriter writer = new BufferedWriter(new FileWriter(USER_FILE, true));
-        writer.write(id + " " + pw);
+        writer.write(id + " " + pw + " " + email);
         writer.newLine();
         writer.close();
 
         System.out.println("회원가입이 완료되었습니다.");
+    }
+
+    private static boolean isIdDuplicate(String id) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(USER_FILE));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split(" ");
+            if (parts.length >= 1 && parts[0].equals(id)) {
+                reader.close();
+                return true;
+            }
+        }
+        reader.close();
+        return false;
     }
 
     private static void login() throws IOException {
@@ -79,7 +112,7 @@ public class Starting_5 {
         String line;
         while ((line = reader.readLine()) != null) {
             String[] parts = line.split(" ");
-            if (parts.length == 2 && parts[0].equals(id) && parts[1].equals(pw)) {
+            if (parts.length >= 2 && parts[0].equals(id) && parts[1].equals(pw)) {
                 loggedInUser = id;
                 System.out.println("환영합니다, " + id + "님!");
                 reader.close();
@@ -106,7 +139,6 @@ public class Starting_5 {
         System.out.print("선수 이름 또는 스탯 용어 입력: ");
         String input = sc.nextLine().trim().toLowerCase();
 
-        // 1. 선수 검색
         BufferedReader statReader = new BufferedReader(new FileReader(STATS_FILE));
         String headerLine = statReader.readLine();
         String[] headers = headerLine.split(",");
@@ -130,12 +162,10 @@ public class Starting_5 {
         }
         statReader.close();
 
-        if (playerFound) return;  // 찾았으면 스탯만 출력하고 끝
+        if (playerFound) return;
 
-        // 2. 스탯 용어 설명 검색
         BufferedReader termReader = new BufferedReader(new FileReader(TERMS_FILE));
         boolean termFound = false;
-
         while ((line = termReader.readLine()) != null) {
             if (line.toLowerCase().startsWith(input + ":")) {
                 System.out.println("\n[스탯 용어 설명]");
@@ -152,17 +182,81 @@ public class Starting_5 {
     }
 
     private static void bbsMenu() throws IOException {
-        System.out.println("[게시판 메뉴]");
-        System.out.println("1. 게시물 작성");
-        System.out.println("2. 댓글 작성");
-        System.out.print("선택: ");
-        String choice = sc.nextLine();
+        while (true) {
+            System.out.println("\n[게시판 메뉴]");
+            System.out.println("1. 게시물 목록 보기");
+            System.out.println("2. 게시물 작성");
+            System.out.println("3. 댓글 작성");
+            System.out.println("4. 뒤로 가기");
+            System.out.print("선택: ");
+            String choice = sc.nextLine();
 
-        switch (choice) {
-            case "1": createPost(); break;
-            case "2": writeComment(); break;
-            default: System.out.println("잘못된 선택입니다.");
+            switch (choice) {
+                case "1": viewPosts(); break;
+                case "2": createPost(); break;
+                case "3": writeComment(); break;
+                case "4": return;
+                default: System.out.println("잘못된 선택입니다.");
+            }
         }
+    }
+
+    // 게시물 목록 보기 + 선택해서 본문 + 댓글 보기
+    private static void viewPosts() throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader("posts.txt"));
+        String line;
+        List<String[]> posts = new ArrayList<>();
+        String author = "", title = "", content = "";
+        while ((line = reader.readLine()) != null) {
+            if (line.startsWith("작성자:")) {
+                author = line.substring(5).trim();
+            } else if (line.startsWith("제목:")) {
+                title = line.substring(3).trim();
+            } else if (line.startsWith("내용:")) {
+                content = line.substring(3).trim();
+            } else if (line.equals("--------")) {
+                posts.add(new String[]{author, title, content});
+            }
+        }
+        reader.close();
+
+        if (posts.isEmpty()) {
+            System.out.println("게시물이 없습니다.");
+            return;
+        }
+
+        for (int i = 0; i < posts.size(); i++) {
+            System.out.printf("%d. [%s] %s\n", i + 1, posts.get(i)[0], posts.get(i)[1]);
+        }
+
+        System.out.print("조회할 게시글 번호 입력 (0은 취소): ");
+        int sel = Integer.parseInt(sc.nextLine());
+        if (sel < 1 || sel > posts.size()) return;
+
+        String[] post = posts.get(sel - 1);
+        System.out.println("\n[게시글 내용]");
+        System.out.println("작성자: " + post[0]);
+        System.out.println("제목: " + post[1]);
+        System.out.println("내용: " + post[2]);
+
+        // 댓글 출력
+        BufferedReader cr = new BufferedReader(new FileReader("comments.txt"));
+        System.out.println("\n[댓글]");
+        boolean found = false;
+        while ((line = cr.readLine()) != null) {
+            if (line.startsWith("#COMMENT")) continue;
+            if (line.startsWith("게시물번호:")) {
+                int postNum = Integer.parseInt(line.substring("게시물번호:".length()).trim());
+                if (postNum == sel) {
+                    String authorLine = cr.readLine();
+                    String contentLine = cr.readLine();
+                    System.out.println(authorLine + " - " + contentLine);
+                    found = true;
+                }
+            }
+        }
+        cr.close();
+        if (!found) System.out.println("댓글이 없습니다.");
     }
 
     private static void createPost() throws IOException {
@@ -187,13 +281,24 @@ public class Starting_5 {
 
     private static void writeComment() throws IOException {
         System.out.println("[댓글 작성]");
+        System.out.print("댓글을 달 게시물 번호 입력: ");
+        int postNumber = Integer.parseInt(sc.nextLine());
+
         System.out.print("댓글 내용: ");
         String comment = sc.nextLine();
 
         BufferedWriter writer = new BufferedWriter(new FileWriter("comments.txt", true));
-        writer.write("작성자: " + loggedInUser + " / " + comment);
+        writer.write("#COMMENT");
+        writer.newLine();
+        writer.write("게시물번호: " + postNumber);
+        writer.newLine();
+        writer.write("작성자: " + loggedInUser);
+        writer.newLine();
+        writer.write("내용: " + comment);
         writer.newLine();
         writer.close();
+
         System.out.println("댓글이 작성되었습니다.");
     }
+
 }
